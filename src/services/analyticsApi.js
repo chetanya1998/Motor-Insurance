@@ -28,63 +28,81 @@ export function buildTrackedEvent({
 }
 
 export function buildFunnelMetrics(sessions = [], events = []) {
-  const countByEvent = (eventName) =>
-    new Set(events.filter((event) => event.eventName === eventName).map((event) => event.sessionId))
-      .size;
+  const eventsBySession = events.reduce((accumulator, event) => {
+    if (!accumulator[event.sessionId]) {
+      accumulator[event.sessionId] = new Set();
+    }
 
-  const totalSessions = sessions.length;
+    accumulator[event.sessionId].add(event.eventName);
+    return accumulator;
+  }, {});
 
-  const steps = [
-    {
-      id: "landing",
-      label: "Landing views",
-      count: totalSessions,
-    },
-    {
-      id: "started",
-      label: "Started quote",
-      count: countByEvent("quote_journey_started"),
-    },
-    {
-      id: "vehicle",
-      label: "Vehicle completed",
-      count: countByEvent("vehicle_details_completed"),
-    },
-    {
-      id: "policy",
-      label: "Policy completed",
-      count: countByEvent("policy_details_completed"),
-    },
-    {
-      id: "estimate",
-      label: "Estimate viewed",
-      count: countByEvent("quote_range_viewed"),
-    },
-    {
-      id: "contact",
-      label: "Contact submitted",
-      count: countByEvent("contact_details_submitted"),
-    },
-    {
-      id: "quotes",
-      label: "Exact quotes viewed",
-      count: countByEvent("exact_quotes_viewed"),
-    },
-    {
-      id: "completed",
-      label: "Applications completed",
-      count: countByEvent("form_completed"),
-    },
+  const stages = [
+    { id: "landing", label: "Landing views" },
+    { id: "started", label: "Started quote" },
+    { id: "vehicle", label: "Vehicle completed" },
+    { id: "policy", label: "Policy completed" },
+    { id: "estimate", label: "Estimate viewed" },
+    { id: "contact", label: "Contact submitted" },
+    { id: "quotes", label: "Exact quotes viewed" },
+    { id: "completed", label: "Applications completed" },
   ];
 
-  return steps.map((step, index) => {
-    const previousCount = index === 0 ? totalSessions : steps[index - 1].count || 1;
-    const dropOff = index === 0 ? 0 : Math.max(previousCount - step.count, 0);
+  const stageIndexBySession = sessions.map((session) => {
+    const sessionEvents = eventsBySession[session.sessionId] ?? new Set();
+    let stageIndex = 0;
+
+    if (sessionEvents.has("quote_journey_started") || session.timing?.journeyStartedAt) {
+      stageIndex = 1;
+    }
+
+    if (sessionEvents.has("vehicle_details_completed") || session.timing?.checkpoints?.vehicleConfirmedAt) {
+      stageIndex = 2;
+    }
+
+    if (sessionEvents.has("policy_details_completed") || session.timing?.checkpoints?.policyCompletedAt) {
+      stageIndex = 3;
+    }
+
+    if (sessionEvents.has("quote_range_viewed") || session.timing?.checkpoints?.quoteGeneratedAt) {
+      stageIndex = 4;
+    }
+
+    if (sessionEvents.has("contact_details_submitted") || session.timing?.checkpoints?.contactSubmittedAt || session.leadId) {
+      stageIndex = 5;
+    }
+
+    if (
+      sessionEvents.has("exact_quotes_viewed") ||
+      (session.data?.exactQuotes?.length ?? 0) > 0 ||
+      session.currentStage === "quotes"
+    ) {
+      stageIndex = 6;
+    }
+
+    if (sessionEvents.has("form_completed") || session.status === "completed" || session.timing?.checkpoints?.completedAt) {
+      stageIndex = 7;
+    }
+
+    return stageIndex;
+  });
+
+  return stages.map((step, index) => {
+    const count = stageIndexBySession.filter((stageIndex) => stageIndex >= index).length;
+    const previousCount =
+      index === 0
+        ? sessions.length
+        : Math.max(
+            stageIndexBySession.filter((stageIndex) => stageIndex >= index - 1).length,
+            1,
+          );
+    const dropOff = index === 0 ? 0 : Math.max(previousCount - count, 0);
 
     return {
       ...step,
+      count,
       conversionFromPrevious:
-        index === 0 ? 100 : Math.round((step.count / previousCount) * 100),
+        index === 0 ? 100 : Math.round((count / previousCount) * 100),
       dropOff,
     };
   });

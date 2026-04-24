@@ -65,6 +65,10 @@ export function validateVehicleDetails(vehicle) {
 export function validatePolicyDetails(policy) {
   const errors = {};
 
+  if (!policy?.previousPolicyExpiryDate && policy?.policyExpiryPreset !== "Not sure") {
+    errors.previousPolicyExpiryDate = "Select when your current policy expires";
+  }
+
   if (!policy?.ncbPercentage) {
     errors.ncbPercentage = "Select No Claim Bonus";
   }
@@ -88,8 +92,10 @@ export function validateContactDetails(customer) {
 
   if (!name) {
     errors.fullName = "Enter your full name";
-  } else if (!/^[A-Za-z]+(?:\s+[A-Za-z]+)+$/.test(name)) {
-    errors.fullName = "Please enter first and last name";
+  } else if (name.length < 2) {
+    errors.fullName = "Name is too short";
+  } else if (!/^[A-Za-z][A-Za-z\s'.-]*$/.test(name)) {
+    errors.fullName = "Use letters only";
   }
 
   if (!mobile) {

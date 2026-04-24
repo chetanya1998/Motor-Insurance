@@ -1,17 +1,12 @@
-import { HashRouter, NavLink, Navigate, Route, Routes } from "react-router-dom";
+import { HashRouter, Link, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { AppDataProvider } from "./context/AppDataContext";
 import AdminDashboardPage from "./pages/AdminDashboardPage";
 import QuoteJourneyPage from "./pages/QuoteJourneyPage";
 
-const navLinkClassName = ({ isActive }) =>
-  [
-    "rounded-full px-4 py-2 text-sm font-semibold transition",
-    isActive
-      ? "bg-ink text-white shadow-glow"
-      : "text-slate-600 hover:bg-white hover:text-ink",
-  ].join(" ");
-
 function Shell() {
+  const location = useLocation();
+  const isAdminRoute = location.pathname === "/admin";
+
   return (
     <div className="min-h-screen text-ink">
       <div className="pointer-events-none fixed inset-0 -z-20 bg-cloud" />
@@ -23,17 +18,19 @@ function Shell() {
               Cover Compass
             </p>
             <p className="text-xs text-slate-500">
-              Motor insurance quote journey prototype
+              {isAdminRoute
+                ? "Internal operations view"
+                : "Car insurance renewal and comparison"}
             </p>
           </div>
-          <nav className="flex items-center gap-2 rounded-full border border-mist bg-white/90 p-1 shadow-panel">
-            <NavLink className={navLinkClassName} end to="/">
-              Quote App
-            </NavLink>
-            <NavLink className={navLinkClassName} to="/admin">
-              Admin Dashboard
-            </NavLink>
-          </nav>
+          {isAdminRoute ? (
+            <Link
+              className="rounded-full border border-mist bg-white px-4 py-2 text-sm font-semibold text-ink transition hover:border-brand-300 hover:bg-brand-50"
+              to="/"
+            >
+              Back to quote journey
+            </Link>
+          ) : null}
         </div>
       </header>
 

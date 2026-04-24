@@ -2,21 +2,21 @@ export const APP_COPY = {
   title: "Get your motor insurance estimate under 1 minute",
   subtitle:
     "Enter your vehicle number and see an estimated quote range before sharing personal details.",
-  primaryCta: "Start quote",
+  primaryCta: "Get free estimate",
   trustSignals: [
     "Free estimate",
-    "Compare multiple insurers",
-    "Personal details asked only after estimate",
+    "No phone or email before price",
+    "Compare insurer options",
   ],
 };
 
 export const JOURNEY_STAGES = [
   { id: "vehicle", label: "Vehicle", description: "Confirm your car details" },
-  { id: "policy", label: "Current policy", description: "Share renewal basics" },
+  { id: "policy", label: "Policy", description: "Share renewal basics" },
   { id: "estimate", label: "Estimate", description: "See your price range" },
-  { id: "contact", label: "Contact", description: "Unlock exact insurer prices" },
-  { id: "quotes", label: "Quotes", description: "Compare plans and add-ons" },
-  { id: "purchase", label: "Purchase", description: "Finish policy details" },
+  { id: "contact", label: "Your details", description: "Unlock exact insurer prices" },
+  { id: "quotes", label: "Plans", description: "Compare plans and add-ons" },
+  { id: "purchase", label: "Complete", description: "Finish policy details" },
 ];
 
 export const STAGE_TO_SCREEN = {

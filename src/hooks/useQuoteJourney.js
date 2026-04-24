@@ -201,6 +201,10 @@ export default function useQuoteJourney() {
   }
 
   async function submitRegistration() {
+    if (!currentSession?.timing?.journeyStartedAt) {
+      startJourney("submit");
+    }
+
     const error = validateRegistration(registrationNumber);
     setRegistrationError(error);
     setLookupError("");
@@ -296,6 +300,11 @@ export default function useQuoteJourney() {
 
       return nextVehicle;
     });
+    setVehicleErrors((previousErrors) => {
+      const nextErrors = { ...previousErrors };
+      delete nextErrors[field];
+      return nextErrors;
+    });
   }
 
   function handleVehicleEdit() {
@@ -336,8 +345,19 @@ export default function useQuoteJourney() {
     goToScreen("policy");
   }
 
-  function updatePolicyField(field, value) {
-    setPolicy((previousPolicy) => ({ ...previousPolicy, [field]: value }));
+  function updatePolicyField(field, value, options = {}) {
+    setPolicy((previousPolicy) => ({
+      ...previousPolicy,
+      [field]: value,
+      ...(field === "previousPolicyExpiryDate" && options.clearPreset
+        ? { policyExpiryPreset: "" }
+        : {}),
+    }));
+    setPolicyErrors((previousErrors) => {
+      const nextErrors = { ...previousErrors };
+      delete nextErrors[field];
+      return nextErrors;
+    });
   }
 
   function selectPolicyExpiryPreset(preset) {
@@ -346,6 +366,11 @@ export default function useQuoteJourney() {
       policyExpiryPreset: preset,
       previousPolicyExpiryDate: preset === "Not sure" ? "" : getDatePresetValue(preset),
     }));
+    setPolicyErrors((previousErrors) => {
+      const nextErrors = { ...previousErrors };
+      delete nextErrors.previousPolicyExpiryDate;
+      return nextErrors;
+    });
     trackEvent("policy_expiry_selected", "policy", { preset });
   }
 
@@ -402,6 +427,11 @@ export default function useQuoteJourney() {
 
   function handleCustomerFieldChange(field, value) {
     setCustomer((previousCustomer) => ({ ...previousCustomer, [field]: value }));
+    setContactErrors((previousErrors) => {
+      const nextErrors = { ...previousErrors };
+      delete nextErrors[field];
+      return nextErrors;
+    });
 
     if (!value) {
       return;
@@ -581,6 +611,11 @@ export default function useQuoteJourney() {
 
   function updatePurchaseField(field, value) {
     setPurchase((previousPurchase) => ({ ...previousPurchase, [field]: value }));
+    setPurchaseErrors((previousErrors) => {
+      const nextErrors = { ...previousErrors };
+      delete nextErrors[field];
+      return nextErrors;
+    });
 
     if (!value) {
       return;
@@ -695,13 +730,19 @@ export default function useQuoteJourney() {
     loadingState,
     beginJourney,
     handleRegistrationFocus,
-    setRegistrationNumber,
+    setRegistrationNumber: (value) => {
+      setRegistrationNumber(value);
+      setRegistrationError("");
+      setLookupError("");
+    },
     submitRegistration,
     handleManualEntry,
     handleVehicleFieldChange,
     handleVehicleEdit,
     confirmVehicleDetails,
     updatePolicyField,
+    setManualPolicyExpiryDate: (value) =>
+      updatePolicyField("previousPolicyExpiryDate", value, { clearPreset: true }),
     selectPolicyExpiryPreset,
     submitPolicyDetails,
     unlockExactQuotes,
